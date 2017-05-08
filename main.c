@@ -37,13 +37,11 @@ void *run(void *p)
 	while(1) {
 		int dur = (rand() + 1) % 2;
 
-		pthread_mutex_lock(&mutex[i]);
 		pickup_forks(i);
 
 		printf("Philo %d is eating\n", i);
 
 		putdown_forks(i);
-		pthread_mutex_unlock(&mutex[i]);
 
 		printf("Philo %d is sleeping\n", i);
 		sleep(dur);
@@ -52,25 +50,26 @@ void *run(void *p)
 
 void pickup_forks(int i)
 {
-	state[i] = HUNGRY;
-	test(i);
-	while (state[i] != EATING)
-		pthread_cond_wait(&cond[i], &mutex[i]);
+	int r = i;
+	int l = (i + 4) % 5;
+
+	pthread_mutex_lock(&mutex[r]);
+	while (forks[l] != 1) /* leave the fork if other one not available */
+		pthread_cond_wait((&mutex[r]), &(cond[r]));
+	pthread_mutex_lock(&mutex[l]);
+	forks[l] = 1;
+	forks[r] = 1;
 }
 
 void putdown_forks(int i)
 {
-	state[i] = THINKING;
-	test((i + 4) % 5);
-	test((i + 1) % 5);
-}
+	int r = i;
+	int l = (i + 4) % 5;
 
-void test(int i)
-{
-	if ((state[(i + 4) % 5] != EATING) && (state[i] == HUNGRY)\
-		&& (state[(i + 1) % 5] != EATING)) {
-		state[i] = EATING;
-		pthread_cond_signal(&cond[i]);
-	}
+	pthread_cond_signal(&cond[r]);
+	forks[l] = 0;
+	forks[r] = 0;
+	pthread_mutex_unlock(&mutex[l]);
+	pthread_mutex_unlock(&mutex[r]);
 }
 
