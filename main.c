@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <time.h>
 
-pthread_mutex_t mutex[5];
+pthread_mutex_t mutex;
 pthread_cond_t cond[5];
 enum {THINKING, HUNGRY, EATING} state[5];
 int forks[5] = {0, 0, 0, 0, 0};
@@ -20,11 +20,11 @@ int main(int argc, char *argv[]) {
 	int idx[5] = {0, 1, 2, 3, 4};
 
 	/* inititialize threads */
+	pthread_mutex_init(&mutex, NULL);
 	for (int i = 0; i < 5; ++i) {
 		pthread_attr_init(&attr[i]);
-		pthread_create(&tid[i], &attr[i], run, &idx[i]);
 		pthread_cond_init(&cond[i], NULL);
-		pthread_mutex_init(&mutex[i], NULL);
+		pthread_create(&tid[i], &attr[i], run, &idx[i]);
 		state[i] = THINKING;
 	}
 
@@ -51,21 +51,21 @@ void *run(void *p)
 
 void pickup_forks(int i)
 {
-	pthread_mutex_lock(&mutex[0]);
+	pthread_mutex_lock(&mutex);
 	state[i] = HUNGRY;
 	test(i);
 	while (state[i] != EATING)
-		pthread_cond_wait(&cond[i], &mutex[0]);
-	pthread_mutex_unlock(&mutex[0]);
+		pthread_cond_wait(&cond[i], &mutex);
+	pthread_mutex_unlock(&mutex);
 }
 
 void putdown_forks(int i)
 {
-	pthread_mutex_lock(&mutex[0]);
+	pthread_mutex_lock(&mutex);
 	state[i] = THINKING;
 	test((i + 4) % 5);
 	test((i + 1) % 5);
-	pthread_mutex_unlock(&mutex[0]);
+	pthread_mutex_unlock(&mutex);
 }
 
 void test(int i)
