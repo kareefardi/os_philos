@@ -40,33 +40,32 @@ void *run(void *p)
 		int dur = rand() % 3 + 1;
 
 		pickup_forks(i);
-
+		printf("Philo %d is eating\n", i);
 		sleep(dur);
 
 		putdown_forks(i);
-
+		printf("Philo %d is thinking...\n", i);
 		sleep(dur);
 	}
 }
 
 void pickup_forks(int i)
 {
-	pthread_mutex_lock(&mutex[i]);
+	pthread_mutex_lock(&mutex[0]);
 	state[i] = HUNGRY;
 	test(i);
 	while (state[i] != EATING)
-		pthread_cond_wait(&cond[i], &mutex[i]);
-	pthread_mutex_unlock(&mutex[i]);
+		pthread_cond_wait(&cond[i], &mutex[0]);
+	pthread_mutex_unlock(&mutex[0]);
 }
 
 void putdown_forks(int i)
 {
-	pthread_mutex_lock(&mutex[i]);
+	pthread_mutex_lock(&mutex[0]);
 	state[i] = THINKING;
-	printf("Philo %d is thinking...\n", i);
 	test((i + 4) % 5);
 	test((i + 1) % 5);
-	pthread_mutex_unlock(&mutex[i]);
+	pthread_mutex_unlock(&mutex[0]);
 }
 
 void test(int i)
@@ -74,7 +73,6 @@ void test(int i)
 	if ((state[(i + 4) % 5] != EATING) && (state[i] == HUNGRY)\
 		&& (state[(i + 1) % 5] != EATING)) {
 		state[i] = EATING;
-		printf("Philo %d is eating\n", i);
 		pthread_cond_signal(&cond[i]);
 	}
 }
