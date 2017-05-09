@@ -5,6 +5,7 @@
 #include <time.h>
 
 pthread_mutex_t mutex;
+pthread_mutex_t pmutex;
 pthread_cond_t cond[5];
 enum {THINKING, HUNGRY, EATING} state[5];
 int forks[5] = {0, 0, 0, 0, 0};
@@ -21,6 +22,7 @@ int main(int argc, char *argv[]) {
 
 	/* inititialize threads */
 	pthread_mutex_init(&mutex, NULL);
+	pthread_mutex_init(&pmutex, NULL);
 	for (int i = 0; i < 5; ++i) {
 		pthread_attr_init(&attr[i]);
 		pthread_cond_init(&cond[i], NULL);
@@ -53,9 +55,21 @@ void pickup_forks(int i)
 {
 	pthread_mutex_lock(&mutex);
 	state[i] = HUNGRY;
+
+	pthread_mutex_lock(&pmutex);
+	printf("Philo %d is trying to pickup fork %d\n", i, (i + 4) % 5);
+	printf("Philo %d is trying to pickup fork %d\n", i, i);
+	pthread_mutex_unlock(&pmutex);
+
 	test(i);
 	while (state[i] != EATING)
 		pthread_cond_wait(&cond[i], &mutex);
+
+	pthread_mutex_lock(&pmutex);
+	printf("Philo %d picked up fork %d\n", i, (i + 4) % 5);
+	printf("Philo %d picked up fork %d\n", i, i);
+	pthread_mutex_unlock(&pmutex);
+
 	pthread_mutex_unlock(&mutex);
 }
 
@@ -63,6 +77,12 @@ void putdown_forks(int i)
 {
 	pthread_mutex_lock(&mutex);
 	state[i] = THINKING;
+
+	pthread_mutex_lock(&pmutex);
+	printf("Philo %d is putting down fork %d\n", i, (i + 4) % 5);
+	printf("Philo %d is putting down fork %d\n", i, i);
+	pthread_mutex_unlock(&pmutex);
+
 	test((i + 4) % 5);
 	test((i + 1) % 5);
 	pthread_mutex_unlock(&mutex);
